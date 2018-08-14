@@ -16,6 +16,12 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplicationLaunchOptionsKey: Any]?) -> Bool {
         // Override point for customization after application launch.
+        guard let rootViewController = window?.rootViewController as? MainViewController else {
+            fatalError("Unexpected Root View Controller")
+        }
+        let repository = WeatherRepository()
+        let mainViewModel = MainViewModel(repository: repository)
+        rootViewController.viewModel = mainViewModel
         return true
     }
 
