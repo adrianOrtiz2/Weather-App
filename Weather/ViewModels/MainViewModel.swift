@@ -64,6 +64,14 @@ class MainViewModel {
         return "Max: \(Int(model.daily.data[0].temperatureMax))˚"
     }
     
+    var dayTemp: String {
+        guard let model = model,
+            model.daily.data.count > 0 else {
+                return ""
+        }
+        return "\(Int(model.daily.data[0].temperatureMin))˚ / \(Int(model.daily.data[0].temperatureMax))˚"
+    }
+    
     var numberOfItemsInSection: Int {
         guard let model = model,
             model.daily.data.count > 1 else {

@@ -19,33 +19,19 @@ class MainViewController: UIViewController {
     
     // MARK: - Properties
     
-    private lazy var locationManager: CLLocationManager = {
-        // Initialize Location Manager
-        let locationManager = CLLocationManager()
-        
-        // Configure Location Manager
-        locationManager.distanceFilter = 1000.0
-        locationManager.desiredAccuracy = 1000.0
-        
-        return locationManager
-    }()
-    
     var viewModel: MainViewModel! {
         didSet {
             setupViewModel()
         }
     }
-    
-    private var currentLocation: CLLocation? {
-        didSet {
-            viewModel.fetchWeatherData(with: currentLocation!)
-        }
-    }
+    private var locationManager: LocationManager?
 
     override func viewDidLoad() {
         super.viewDidLoad()
-
         notificationsHandler()
+        locationManager = LocationManager(locationResponse: {[weak self] (newLocation) in
+            self?.viewModel.fetchWeatherData(with: newLocation)
+        })
     }
     
     // MARK: - Life cycle
@@ -58,22 +44,12 @@ class MainViewController: UIViewController {
     // MARK: - Notifications
     
     @objc func applicationDidBecomeActive(notification: Notification) {
-        requestLocation()
+        locationManager?.requestLocation()
     }
     
     private func notificationsHandler() {
         let notificationCenter = NotificationCenter.default
-        notificationCenter.addObserver(self, selector: #selector(applicationDidBecomeActive(notification:)), name: Notification.Name.UIApplicationDidBecomeActive, object: nil)
-    }
-    
-    // MARK: - Request User Location
-    private func requestLocation() {
-        locationManager.delegate = self
-        if CLLocationManager.authorizationStatus() == .authorizedWhenInUse {
-            locationManager.requestLocation()
-        } else {
-            locationManager.requestWhenInUseAuthorization()
-        }
+        notificationCenter.addObserver(self, selector: #selector(applicationDidBecomeActive(notification:)), name: UIApplication.didBecomeActiveNotification, object: nil)
     }
     
     private func updateView() {
@@ -111,35 +87,4 @@ extension MainViewController: UICollectionViewDataSource {
         cell.configureCell(with: dayViewModel, at: indexPath.row)
         return cell
     }
-}
-
-extension MainViewController: CLLocationManagerDelegate {
-    
-    // MARK: - Location Change Authorization
-    func locationManager(_ manager: CLLocationManager, didChangeAuthorization status: CLAuthorizationStatus) {
-        if status == .authorizedWhenInUse {
-            manager.requestLocation()
-        } else {
-            currentLocation = Defaults.location
-        }
-    }
-    
-    // MARK: - Location Updates
-    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-        if let location = locations.first {
-            currentLocation = location
-            manager.delegate = nil
-            manager.stopUpdatingHeading()
-        } else { // Failed to get location
-            currentLocation = Defaults.location
-        }
-    }
-    
-    // MARK: - Location Did Fail
-    func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
-        if currentLocation == nil {
-            currentLocation = Defaults.location
-        }
-    }
-    
 }
